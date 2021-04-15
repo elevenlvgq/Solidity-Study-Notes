@@ -1,0 +1,525 @@
+## 1，函数重载；
+
+1. 函数的名字相同
+2. 函数的参数不同，（类型，数量）
+3. 不考虑函数的返回值是否相同
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract chongzai{
+    
+
+		//编译不通过
+    // function fun(){
+        
+    //}
+    
+    // function fun(){
+        
+    //}
+    
+    
+    //编译不通过
+    //function fun2() returns(uint){
+        
+    //}
+    
+    //function fun2() returns(string){
+        
+    //}
+    
+    
+    //编译重载，函数参数的数量不同
+    function fun3(uint num){
+        
+    }
+    
+    function fun3(){
+        
+    }
+    
+    
+    //函数参数的类型不同
+    function fun4(uint num){
+        
+    }
+    
+    function fun4(uint8 num){
+        
+    }
+    
+    //函数参数的类型不同,
+    function fun5(address num){
+        
+    }
+    
+    function fn5(uint160 num){
+        
+    }
+    
+
+		uint public a = 0;
+    //两个重载函数
+    function test1(uint num){
+        a = 100;
+    }
+    
+    function test1(uint8 num){
+        a = 200;
+    }
+    
+
+		function testIt(){
+        //test(100); //编译不能够通过，无法明确是哪一个函数，因为 100 可以匹配 uint 和 uint8
+				test1(256); // 能够编译通过，因为 256 不能够匹配 uint8，只能够匹配 uint256；
+    }
+
+    function test2(uint num){
+        a = 100;
+    }
+    
+    function test2(uint8 num){
+        a = 200;
+    }
+    
+    
+    //这两个函数虽然能够编译通过，但是不能够被调用，因为无法明确是哪一个函数
+    function test(){
+        //test2(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4);
+        test(100);
+    }
+
+    
+}
+```
+
+## 2，函数参数命名
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract funcParam{
+    
+    uint public num;
+    string public name;
+     
+        function setParam(uint _num,string _name){
+            num = _num;
+            name = _name;
+        }
+        
+        
+    function Test(){
+        setParam(10,"zhengjianxun");
+    }
+    
+    
+    function Test2(){
+        setParam({_num:100, _name:"xiaoyu"});
+    }
+     
+    function Test3(){
+        setParam({_num:100, _name:"xiaoyu"});
+    }
+    
+    //function Test4(){
+        //setParam(1000);
+    //}
+     
+}
+```
+
+## 3、返回值特性
+
+0411 更新
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract funreturn{
+		//返回值可以有名字
+    function returnTest() returns(uint mul){
+        uint a = 10;
+        return a;
+    }
+    //可以直接为返回值赋值
+    function returnTest2() returns(uint mul){
+        mul = 100;
+    }
+    //当我给返回值赋值以后，并且我有个 return，以最后的 return 为主
+    function returnTest3() returns(uint mul){
+        uint a = 10;
+        mul = 100;
+        return a;
+    }
+    //返回常量，自动匹配
+    function returnTest4() returns(uint mul){
+        uint a = 10;
+        mul = 100;
+        return 1;
+    }
+    //函数可以有多返回值，多返回值赋值
+    function returnTest5(uint a,uint b) view returns(uint add,uint mul){
+        add = a+b;
+        mul = a*b;
+        
+    }
+    //函数可以有多返回值，直接 returns(param list)
+    function returnTest6(uint a,uint b) view returns(uint add,uint mul){
+        return (a+b, a*b);
+        
+    }
+    //函数可以有多返回值，直接返回常量
+    function returnTest7() view returns(uint add,uint mul){
+        return (10,60);
+        
+    }
+    //一个有用的操作，交换变量的值
+    function returnTest8(uint a, uint b) returns(uint a1,uint a2){
+        return (b,a);
+    }
+}
+```
+
+## 4，变量的声明周期与作用域
+
+0411 更新
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract vaulcopy{
+    uint public a = 100;
+    uint b = 200;
+		//编译错误，不能重定义
+    //uint a = 300;
+    
+		//函数体内的变量会覆盖掉函数体外部的变量
+    function test() view returns(uint){
+        uint a = 299;
+        a = 700;
+        return a;
+    }
+    
+    function test2(uint a) view returns(uint){
+				//编译错误，不能重定义
+        //uint a;
+        //for(uint a =0;a<5;a++)
+        
+        //{
+            //uint a;
+        //}
+        
+        a = 700;
+        return a;
+    }
+}
+```
+
+## 5，值传递与副本拷贝
+
+0411 更新
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract zhichuandi{
+    uint public a = 100;
+    //uint public b = 200;
+    uint public b = a;
+    
+    
+    function changeit(){
+        b = 999;
+    }
+    
+    
+    function changeit2()view returns(uint,uint){
+        uint  a1 = 100;
+        uint  b1 = a1;
+        
+        //b1 = 999;
+        a1 = 999;
+        
+        return(a1,b1);
+    }
+    
+    function changeit3(uint mm) returns(uint){
+        mm++;
+        return mm;
+    }
+    
+    function test(){
+        changeit3(a);
+    }
+    
+}
+```
+
+## 6，废弃的 const 静态修饰
+
+更新0413
+
+- 函数内部的 constant 关键字，在 4.0 版本中因为他是和 view 这样的关键字是等价的，在 5.0 版本中将会废弃掉 constant 关键字
+- 全局变量，constant 属性，局部变量是没有这个属性的
+- 全局变量加上了 constant 属性，就不能被修改
+- 当前的版本支持 int，uint，string ，bytes1 - - - bytes32 能够使用 constant
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract contractTest{
+
+    //当前的版本支持 int，uint，string ，bytes1 - - - bytes32 能够使用 constant
+    uint public kk = 100;
+    uint public constant num = 50;
+    int public constant num2 = 50;
+    uint16 public constant num3 = 50;
+    string constant num4 = "eleven";
+    bytes32 constant num5 = 0x7a68;
+    
+    //数内部的 constant 关键字，在 4.0 版本中因为他是和 view 这样的关键字是等价的，在 5.0 版本中将会废弃掉 constant 关键字
+    function consttest() public constant returns(uint){
+        return kk;
+    }
+
+    
+    function changeit(){
+				//全局变量加上了 constant 属性，就不能被修改
+        //num = 100;
+
+				//全局变量，constant 属性，局部变量是没有这个属性的
+        //uint public constant num2 = 50;
+    }
+    
+}
+```
+
+## 7，快人一步构建函数
+
+更新0413
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract gouzao{
+    
+    uint public a;
+    //构造函数，在一部署合约的时候就会被执行
+    //function gouzao(){
+        //a = 100;
+    //}
+    //构造函数可以有参数
+    function gouzao(uint _a,uint _b){
+        a = _a;
+    }
+    
+    
+}
+
+contract gouzao2{
+    
+    address public owner;
+    uint public a;
+    
+    //function gouzao(){
+        //a = 100;
+    //}
+    //新的版本使用了 constructor 替换了原来的构造函数的命名方式
+    //constructor(){
+        //a = 100;
+    //}
+    
+    //constructor(uint _a,uint _b){
+        //a = _a;
+    //}
+    //通过构造函数获取刀合约的拥有者
+    constructor(){
+        owner = msg.sender;
+    }
+      
+}
+```
+
+## 8，modifier
+
+更新0413
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract modifiertest{
+    
+    address public owner;
+    uint public num = 0;
+    
+    //合约的部署者的地址存储在 owner 变量中
+    constructor(){
+        owner = msg.sender;
+    }
+    
+    //定义 modifier 
+    modifier OnlyOwner{
+				//判断
+        require(msg.sender == owner);
+        _;  //动态添加
+    }
+    
+    //附加上了 modifier，先执行了  require(msg.sender == owner);  判断我们合约的调用者是否等于合约的拥有者，如果判断成立，就会执行 num = _num;
+		//判断若是不成立，就会回滚报错
+    function changeit(uint _num) OnlyOwner{
+        num = _num;
+    }
+    
+}
+```
+
+更新0414
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract mappingtest{
+		//定义 mapping     idmapping 代表地址与 id 映射到了一起，namemapping 代表与名字的字符串映射到了一起
+    mapping(address => uint) idmapping;  //0x5B38Da6a701c568545dCfcB03FcB875f56beddC4 => 1
+    mapping(uint => string) namemapping;  //1 => zheng
+    
+    //注册的总量
+    uint public sum = 0;
+    
+		//调用 control 函数，用户只能注册一次账户
+    modifier control{
+        require(idmapping[msg.sender] == 0);
+        _;
+    }
+    
+    
+    function register(string name) control{
+        //require(idmapping[msg.sender] == 0);
+		//获取当前合约的调用者
+        address account = msg.sender;
+        sum++;
+
+				//将合约的调用者的地址与注册总量 id 联系到了一起
+        idmapping[account] = sum;
+
+				//当前用户 id 与用户注册的名字绑定到了一起
+        namemapping[sum] = name;
+    }
+    //通过关键字地址获取到和他绑定在一起的 id 值
+    function getidbyaddress(address are) view returns(uint){
+        return idmapping[are];
+    }
+    
+    //通过 id 值获取到和他绑定在一起的名字
+    function getnamebyid(uint id) view returns(string){
+        return namemapping[id];
+    }
+    
+    
+    
+}
+```
+
+更新0414
+
+```jsx
+
+pragma solidity ^0.4.26;
+
+contract modifiertest2{
+    
+    uint public level = 9;
+    
+    string public name;
+    
+    uint public DNA = 0;
+    
+    //函数的 modifier 可以有参数
+    modifier contrllevel(uint needlevel){
+        require(level >= needlevel);
+        _;
+    }
+    
+    //使用 modifier ，增加代码的重用性和拓展性
+    function changename() contrllevel(2) {
+        //require(level >= 2);
+        name = "eleven";
+    }
+    
+    function changeDNA() contrllevel(10){
+        require(level >= 10);
+        DNA = 999;
+    }
+}
+```
+
+更新0414
+
+多重 modifier 的执行顺序
+
+```jsx
+
+pragma solidity ^0.4.26;
+
+contract mulmodifier{
+
+    uint public a = 0;
+    //modifier 的执行顺序，a = 1 ------ a = 100; ------- a = 2;,也就是说函数体内的 a = 100 覆盖掉了 modifier 中的 "_"
+    modifier mod1{
+        a = 1;
+        _;
+        a = 2;
+    }
+    
+    modifier mod2{
+        a = 3;
+        _;
+        
+        a = 4;
+    }
+    
+    //函数可以有多个 modifier
+    //首先执行 a = 1, a=3, a=10, a=4, a=2,
+
+		//mod1 mod2 可以顺序不同
+    function test() mod1 mod2{
+        a = 100;
+    }
+
+}
+```
+
+## 9，面向对象 —合约的继承
+
+更新0414
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract father{
+    
+    uint public money = 10000;
+    
+    function dahan() public returns(string){
+        
+    }
+
+}
+
+// son 这个合约继承了 father 这个合约
+contract son is father{
+    
+    function getmoney() returns(uint){
+				//继承了父亲的 money 属性
+        return money;
+    }
+    //继承了 dahan() 函数，行为
+    function test() returns(string){
+        return dahan();
+    }
+    
+
+}
+```
