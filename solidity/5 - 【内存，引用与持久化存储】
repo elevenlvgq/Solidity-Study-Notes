@@ -1,0 +1,71 @@
+1、内存与区块链 —— storage 与 momory 原理
+
+在solidity合约内部
+函数外部声明的变量默认储存在storage里
+函数内部声明的变量默认储存在memory里
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract momorytest{
+    
+    uint public num1 = 5;
+    
+    function add(uint num) view returns(uint){
+        num = num+1;
+        return num;
+    }
+    
+    function test() view returns(uint,uint){
+        uint i = 2;
+        uint j = add(i);
+        return(i,j);
+    }
+    
+    
+    function changeit(){
+        //num1 = 1000; 
+        add(num1);
+    }
+    
+    
+    
+}
+```
+
+## 2、结构的基础
+
+```jsx
+pragma solidity ^0.4.0;
+contract structtest1{
+    
+    struct stu{
+        uint id;
+        string name;
+        mapping(uint=>string) maptest; //mapping即使在结构体内，初始化时也是可以忽略的
+    }
+    
+    function init1() public returns(uint,string){
+        stu memory student1= stu(1234,'stu1');
+        return (student1.id,student1.name); //初始化方法一
+    }
+    
+    function init2() public returns(uint,string){
+        stu memory student2=stu({name:'stu2',id:5678});
+        return (student2.id,student2.name); //初始化方法二
+    }
+    
+    stu tempstudent1; //只要是函数外面的都是storage
+    
+    function mappingtest() public returns(uint,string){
+        stu memory student3=stu({name:'stu3',id:5678});
+        //student3.maptest[100]='mapstu3';
+       //直接赋值会报错，因为storage不能转化为memory
+       tempstudent1=student3;
+       //此时tempstudent1，student3使用的是统一指针，所以下面对tempstudent1修改就等于修改student3
+       tempstudent1.maptest[100]='how to map';
+       return (student3.id,tempstudent1.maptest[100]);
+    }
+}
+
+```
