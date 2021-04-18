@@ -523,3 +523,364 @@ contract son is father{
 
 }
 ```
+
+## 10，对象的连续继承
+
+更新0415
+
+```jsx
+pragma solidity ^0.4.26;
+
+//连续继承的概念
+//son 继承了 father ，father 继承了 grandfather ，送就可以继承 grandfather 的属性和函数
+contract grandfather{
+    uint public gudong = 200;
+    
+    function zhongdi() public returns(string){
+        return "zhongdi";
+    }
+}
+
+contract father is grandfather{
+    
+    uint public money = 10000;
+    
+    function dahan() public returns(string){
+        return "dahan";
+    }
+
+}
+
+contract son is father{
+    
+    function getmoney() returns(uint){
+        return money;
+    }
+    
+    function getgudong() returns(uint){
+        return gudong;
+    }
+    
+    
+    function test() returns(string){
+        return dahan();
+    }
+    
+    function test2() returns(string){
+        return zhongdi();
+    }
+}
+```
+
+## 11，遗传特性，继承中的权限
+
+更新0415
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract father{
+    //uint money = 10000;   //如果属性不加上任何的修饰符，是可以被继承的
+		//uint public money = 10000;   //加上 public 属性后，能够被继承
+		//uint internal money = 10000;  //加上 internal 修饰符后，能够被继承
+		//uint external money = 10000;  //编译报错，没有external 修饰符
+		uint private money = 10000;  //编译报错，因为 private 代表只有父亲能够拥有这个属性，该属性不能被继承
+}
+    
+    
+contract son is father{
+        
+    function getmoney() public view returns(uint){
+        return money;
+    }
+        
+}
+```
+
+继承
+
+```jsx
+pragma solidity ^0.4.26;
+
+    
+//contract father{
+    //uint  money = 10000;
+    //uint public money = 10000;
+    //uint internal money = 10000;
+    //uint external money = 10000;
+    //uint private money = 10000;
+    
+//}
+    
+//public internal external（这个比较特殊）函数可以被继承的
+//private 函数只能够被合约独立使用，不能被继承
+contract father{
+    
+    function dahan() public pure returns(string){
+        return "dahan";
+    }
+		
+		function dahantest() public view{
+        dahan();
+    }
+    
+}
+    
+contract son is father{
+        
+    function test() public pure returns(string){
+        return dahan();
+    }
+        
+}
+```
+
+external 权限修饰详解
+
+更新0418
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract father{
+    //
+    function dahan() external pure returns(string){
+        return "dahan";
+    }
+    //external 修饰的函数不能在内部被调用
+    //function dahan() public view{
+        // dahan();
+    //}
+    
+    //间接的在合约内部调用，输入 this.
+    function dahantest() public view{
+        this.dahan();
+    }   
+}
+  
+contract son is father{
+    //external 修饰的函数不能在被继承合约内部调用    
+    //function test() public pure returns(string){
+        //return dahan();
+    //}    
+}
+
+//external 修饰的函数调用的第二种方式，在另一个合约内部创建或引用合约的地址 “地址.” 来调用
+contract externaltest{
+    
+    father f = new father();
+    
+    function externaltestit() returns(string){
+        return f.dahan();
+    }
+    
+}
+```
+
+## 12，函数总结
+
+更新0415
+
+- private 不能被继承，不能够在外部被调用，可以在内部被调用
+
+    ```jsx
+    pragma solidity ^0.4.26;
+
+     //private 函数只能够被合约独立使用，不能被继承
+    contract father{
+        
+        function dahan() public pure returns(string){
+            return "dahan";
+        }
+
+    		function dahantest() public view{
+    				// this.dahan();不能够在外部被调用
+    				dahan(); //可以在内部被调用
+    		}
+        
+    }
+    ```
+
+- internal 可以在内部被调用，不能够在外部被调用，可以被继承
+- external 不能够在内部被调用，只能够在外部被调用，可以被继承，如果强行调用，通过 “地址.”
+- public 权限最大，可以在内部外部被调用，可以被继承
+- pure 不会读取全局变量，更不会修改全局变量，一个固定的输入就会有一个固定的输出，
+- constant 在函数中，和 view 相同，在全局变量中，只用于 bytes1 - - - bytes32，uint，int，string 代表数据不能够被修改
+- view 只读取全局变量的值，不修改它，不消耗 gas
+- payable 转账时候必须要加的关键字
+- 命名参数 {value:2,  name:"eleven"}
+- 函数可以有多返回值，
+
+## 13，全局变量自动 getter 函数
+
+更新0416
+
+```jsx
+pragma solidity ^0.4.26;
+
+//1、public 修饰符默认的生成 get 方法，供我们外部调用
+contract getter{
+    
+    uint public num = 100;
+
+		//2、它等价与这个函数，当我们写了这个函数，默认函数就会消失
+		//3、默认生成的 get 函数是 external 权限的，不能够在合约内部调用
+		function num() external view returns(uint){
+        return num;
+    }
+
+		//3、默认生成的 get 函数是 external 权限的，不能够在合约内部调用
+		//function test(){
+        //this.num();
+    //}
+    
+
+		mapping(uint => string) public map;
+    //mapping 这样一个类型很特殊，默认的会生成下面这个函数
+    //function map(uint key) external returns(string){
+        
+    //}
+
+		function test(){
+        this.num();
+    }
+    
+    function test2(){
+        map[2] = "eleven";
+    }
+    
+    function test3() returns(string){
+        return this.map(2);
+    }
+		
+}
+```
+
+## 14、超级复杂的 getter 函数
+
+更新0416
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract getter{
+    //套用
+    mapping(uint => mapping(uint => mapping(uint => string))) public map;
+    
+    
+    function test(){
+        map[0][1][2] = "eleven";
+    }
+}
+```
+
+## 15、继承中函数的重载
+
+更新0416
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract father{ 
+   
+		uint public money = 10000;
+
+    function dahan() returns(string){
+        return "打小鼾";
+    }
+}
+
+contract son is father{
+    //当子合约与父合约有相同的属性的时候。子合约会覆盖掉父合约的属性
+    uint money = 99999999999999;
+    function getmoney() returns(uint){
+        return money;
+    }
+    
+    function dahan() returns(string){
+        return "打大鼾";
+    }
+    
+    function test() view returns(string){
+        return dahan();
+    }
+    
+}
+```
+
+## 16、基因杂交—多重继承
+
+更新0416
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract father{
+    
+    uint public money = 1000;
+    uint public height = 160; 
+
+		function test() returns(string){
+        return "A";
+    }
+}
+
+contract mother{
+    uint public height = 180;
+	
+		function test() returns(string){
+        return "B";
+    }
+}
+
+//当 father 有 height 属性，并且 mother 也有 height 属性的时候，以最后的 mother 为准。函数也是一样
+contract son is father,mother{
+		//如果子合约有一个属性，他会覆盖掉 father 和 mother 的属性。函数也是一样
+    uint public height = 9999999999999;
+    function getheight() returns(uint){
+        return height;
+    }
+    
+		function AorB() view returns(string){
+        return test();
+    }
+
+		function test() returns(string){
+        return "son";
+    }
+    
+    
+}
+```
+
+## 17、合约的销毁
+
+更新0416
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract destruct{
+    
+    
+    address owner;
+    
+    uint public money = 0;
+    
+    constructor(){
+        owner = msg.sender;
+    }
+    
+    function increment(){
+        money+=10;
+    }
+    
+    //执行销毁之后就不能在进行交互
+    function kill(){
+        if(msg.sender == owner){
+            selfdestruct(owner);
+        }
+    }
+
+}
+```
