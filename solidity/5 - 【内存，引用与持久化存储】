@@ -1,4 +1,4 @@
-1、内存与区块链 —— storage 与 momory 原理
+## 1、内存与区块链 —— storage 与 momory 原理
 
 在solidity合约内部
 函数外部声明的变量默认储存在storage里
@@ -33,7 +33,82 @@ contract momorytest{
 }
 ```
 
+20210419更新
+
+```jsx
+
+//这个例子证明了值传递时。会开辟一个空间，互不影响，修改一个变量不会影响另外的一个变量
+pragma solidity ^0.4.26;
+
+contract momorytest{
+
+    uint public num1 = 5;
+    uint public num2 = num1;
+ 
+    function test() returns(uint){
+        
+        uint i = num1;
+        uint j = i;
+        
+        j++;
+        
+        return i; 
+    }
+    
+    function test2() returns(uint){
+        
+        uint i = num1;
+        uint j = i;
+
+        i++;
+        
+        return i; 
+    }
+}
+```
+
+20210419更新
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract momorytest{
+    
+    uint[] arrx; //这个状态变量存储在区块链的网络之上
+
+    //当我传递这个可变长度数组的时候，会在内存中为它分配空间
+    function test(uint[] arry) returns(uint){
+        
+        arrx = arry; //将内存的 arry 拷贝给区块链上的 arrx 变量
+
+		//当我们在函数体内部定义了一个可变长度的数组时，实际上，它默认的类型是 storage 类型，它指向了区块链上的arrx，所以当我修改 z 的元素的时候，我实际上在操作的是区块链上的arrx。
+		uint[] z = arrx;
+		
+		//通过指针实际上修改了区块链上的 arrx 的值
+ 		z[0] = 100;
+		
+		//通过指针实际上修改了区块链上 arrx 的长度，说明 z 和 arrx 其实是一样的，操作 z 的时候，会改变 arrx 的值
+		z.length = 100;
+		
+    } 
+    //元素 arrx 第一元素
+    function test2() returns(uint){
+        return arrx[0];
+    }
+    
+    //返回 arrx 的长度
+    function test3() returns(uint){
+        return arrx.length;
+    }
+    
+    
+    
+}
+```
+
 ## 2、结构的基础
+
+20210419更新
 
 ```jsx
 pragma solidity ^0.4.0;
@@ -68,4 +143,113 @@ contract structtest1{
     }
 }
 
+```
+
+## 3、结构体定义与初始化
+
+20210419更新
+
+```jsx
+
+pragma solidity ^0.4.26;
+
+contract structtest{
+    //结构体的定义
+    struct student{
+        uint grade;
+        string name;
+    }
+
+    //结构体的定义
+		struct student2{
+        uint grade;
+        string name;
+
+        //student stu;  结构体内部不能够包含自己本身,但是可以是动态长度的数组，也可以是映射
+        
+        student2[] stu; 
+        mapping(uint => student2) hahah;
+    }
+    
+		//结构体初始化方法一
+    function init() view returns(uint,string){
+				//在函数体内部的 struct 默认的是 storage 类型
+        student memory s = student(100,"eleven");
+        
+        return(s.grade,s.name);
+    }
+
+    //结构体初始化方法二
+    function init2() view returns(uint,string){
+        student memory s = student({grade:100,name:"eleven"});
+        
+        return(s.grade,s.name);
+    } 
+}
+```
+
+## 4、结构体中的 mapping 特性
+
+20210419更新
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract structtest{
+    
+		//
+    struct student{
+        
+        uint grade;
+        string name;
+        
+        mapping(uint => string) map;
+    }
+    
+
+		//memory 的对象不能够直接的操作 struct 结构体中的 mapping
+    function init() view returns(uint,string){
+				
+				//在初始化结构体的时候，忽略掉这样的 mapping 类型
+        student memory s = student(100,"eleven");
+        
+        //s.map = "helloworld";
+        
+        return(s.grade,s.name);
+    }
+
+}
+```
+
+```jsx
+pragma solidity ^0.4.26;
+
+contract structtest{
+    
+    struct student{
+        
+        uint grade;
+        string name;
+        
+        mapping(uint => string) map;
+    }
+    
+
+    
+    student meimei; // 默认为 storage 类型，只能够用 stroage 类型来操作我们的结构体中的 mapping 类型；
+    
+    function init() view returns(uint,string,string){
+        student memory s = student(100,"eleven");
+        
+        //s.map = "helloworld";
+        
+				//将内存当中的 s 对象赋值给 meimei 这样的 storage 对象
+        meimei = s;
+
+				//我们智能通过 storage 对象来操作我们的结构体中 mapping 属性
+        meimei.map[0] = "helloworld";
+        
+        return(s.grade,s.name,meimei.map[0]);
+    }
+}
 ```
